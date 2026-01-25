@@ -176,7 +176,9 @@ type GatewayService struct {
 	deferredService     *DeferredService
 	concurrencyService  *ConcurrencyService
 	claudeTokenProvider *ClaudeTokenProvider
-	sessionLimitCache   SessionLimitCache // 会话数量限制缓存（仅 Anthropic OAuth/SetupToken）
+	sessionLimitCache   SessionLimitCache        // 会话数量限制缓存（仅 Anthropic OAuth/SetupToken）
+	signaturePoolService SignaturePoolService    // 签名池服务（用于 Claude Console API Key 账户）
+	signatureService     SignatureService        // 签名服务（用于采集签名存储）
 }
 
 // NewGatewayService creates a new GatewayService
@@ -198,25 +200,29 @@ func NewGatewayService(
 	deferredService *DeferredService,
 	claudeTokenProvider *ClaudeTokenProvider,
 	sessionLimitCache SessionLimitCache,
+	signaturePoolService SignaturePoolService,
+	signatureService SignatureService,
 ) *GatewayService {
 	return &GatewayService{
-		accountRepo:         accountRepo,
-		groupRepo:           groupRepo,
-		usageLogRepo:        usageLogRepo,
-		userRepo:            userRepo,
-		userSubRepo:         userSubRepo,
-		cache:               cache,
-		cfg:                 cfg,
-		schedulerSnapshot:   schedulerSnapshot,
-		concurrencyService:  concurrencyService,
-		billingService:      billingService,
-		rateLimitService:    rateLimitService,
-		billingCacheService: billingCacheService,
-		identityService:     identityService,
-		httpUpstream:        httpUpstream,
-		deferredService:     deferredService,
-		claudeTokenProvider: claudeTokenProvider,
-		sessionLimitCache:   sessionLimitCache,
+		accountRepo:          accountRepo,
+		groupRepo:            groupRepo,
+		usageLogRepo:         usageLogRepo,
+		userRepo:             userRepo,
+		userSubRepo:          userSubRepo,
+		cache:                cache,
+		cfg:                  cfg,
+		schedulerSnapshot:    schedulerSnapshot,
+		concurrencyService:   concurrencyService,
+		billingService:       billingService,
+		rateLimitService:     rateLimitService,
+		billingCacheService:  billingCacheService,
+		identityService:      identityService,
+		httpUpstream:         httpUpstream,
+		deferredService:      deferredService,
+		claudeTokenProvider:  claudeTokenProvider,
+		sessionLimitCache:    sessionLimitCache,
+		signaturePoolService: signaturePoolService,
+		signatureService:     signatureService,
 	}
 }
 
@@ -2979,11 +2985,33 @@ func (s *GatewayService) handleStreamingResponse(ctx context.Context, resp *http
 	needModelReplace := originalModel != mappedModel
 	clientDisconnected := false // 客户端断开标志，断开后继续读取上游以获取完整usage
 
+	// 初始化 signature 处理状态（仅对启用了 signature 处理的 anthropic apikey 账户）
+	var sigState *SignatureStreamState
+	var sigCollector *SignatureCollector
+	if s.shouldProcessSignature(account) {
+		sigConfig := account.GetSignatureConfig()
+		if sigConfig != nil && sigConfig.Enabled {
+			// 如果启用采集，创建采集器
+			if sigConfig.EnableCollection {
+				minLen := sigConfig.MinLength
+				if minLen <= 0 {
+					minLen = 350 // 默认最小长度
+				}
+				sigCollector = NewSignatureCollector(account.ID, &originalModel, minLen)
+			}
+			sigState = NewSignatureStreamState(ctx, sigConfig, s.signaturePoolService, account.ID, sigCollector)
+		}
+	}
+
 	for {
 		select {
 		case ev, ok := <-events:
 			if !ok {
-				// 上游完成，返回结果
+				// 上游完成，异步存储采集的签名
+				if sigCollector != nil && sigCollector.Count() > 0 {
+					go s.batchStoreCollectedSignatures(context.Background(), sigCollector)
+				}
+				// 返回结果
 				return &streamingResult{usage: usage, firstTokenMs: firstTokenMs, clientDisconnect: clientDisconnected}, nil
 			}
 			if ev.err != nil {
@@ -3022,6 +3050,22 @@ func (s *GatewayService) handleStreamingResponse(ctx context.Context, resp *http
 				// 如果有模型映射，替换响应中的model字段
 				if needModelReplace {
 					line = s.replaceModelInSSELine(line, mappedModel, originalModel)
+				}
+				// Signature 处理（在模型替换之后）
+				if sigState != nil {
+					processedLine, extraLines, _ := sigState.ProcessSSELine(line)
+					// 注入额外的行（如生成的 signature_delta），在原始行之前写入
+					if !clientDisconnected && len(extraLines) > 0 {
+						for _, extra := range extraLines {
+							if _, err := fmt.Fprintf(w, "%s\n", extra); err != nil {
+								clientDisconnected = true
+								log.Printf("Client disconnected during streaming (signature injection), continuing to drain upstream for billing")
+								break
+							}
+							flusher.Flush()
+						}
+					}
+					line = processedLine
 				}
 			}
 
@@ -3103,6 +3147,51 @@ func (s *GatewayService) replaceModelInSSELine(line, fromModel, toModel string) 
 	}
 
 	return "data: " + string(newData)
+}
+
+// shouldProcessSignature 判断是否需要处理 signature
+// 仅对 anthropic platform + apikey 类型的账户，且启用了 signature 处理配置的账户返回 true
+func (s *GatewayService) shouldProcessSignature(account *Account) bool {
+	if account == nil {
+		return false
+	}
+	// 仅对 anthropic platform + apikey 类型的账户启用
+	if account.Platform != PlatformAnthropic || account.Type != AccountTypeAPIKey {
+		return false
+	}
+	// 检查是否有签名池服务
+	if s.signaturePoolService == nil {
+		return false
+	}
+	// 检查账户配置
+	config := account.GetSignatureConfig()
+	return config != nil && config.Enabled && config.Strategy != "disabled"
+}
+
+// batchStoreCollectedSignatures 批量存储采集的签名（异步调用）
+func (s *GatewayService) batchStoreCollectedSignatures(ctx context.Context, collector *SignatureCollector) {
+	if collector == nil || s.signatureService == nil {
+		return
+	}
+
+	signatures := collector.GetCollected()
+	if len(signatures) == 0 {
+		return
+	}
+
+	accountID := collector.GetAccountID()
+	model := collector.GetModel()
+
+	log.Printf("[SignatureCollector] Account %d: storing %d collected signatures", accountID, len(signatures))
+
+	result, err := s.signatureService.BatchImportWithAccountID(ctx, signatures, model, "collected", accountID)
+	if err != nil {
+		log.Printf("[SignatureCollector] Account %d: failed to store signatures: %v", accountID, err)
+		return
+	}
+
+	log.Printf("[SignatureCollector] Account %d: stored signatures - total=%d imported=%d duplicated=%d failed=%d",
+		accountID, result.Total, result.Imported, result.Duplicated, result.Failed)
 }
 
 func (s *GatewayService) parseSSEUsage(data string, usage *ClaudeUsage) {

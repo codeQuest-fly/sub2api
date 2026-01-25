@@ -695,3 +695,79 @@ func parseExtraInt(value any) int {
 	}
 	return 0
 }
+
+// GetSignatureConfig 获取账户的 signature 处理配置
+// 仅对 anthropic platform + apikey 类型的账户有效
+func (a *Account) GetSignatureConfig() *SignatureConfig {
+	if a.Extra == nil {
+		return nil
+	}
+
+	raw, ok := a.Extra["signature_config"]
+	if !ok {
+		return nil
+	}
+
+	configMap, ok := raw.(map[string]any)
+	if !ok {
+		return nil
+	}
+
+	config := &SignatureConfig{}
+
+	// 解析 enabled
+	if enabled, ok := configMap["enabled"].(bool); ok {
+		config.Enabled = enabled
+	}
+
+	// 解析 strategy
+	if strategy, ok := configMap["strategy"].(string); ok {
+		config.Strategy = strategy
+	}
+
+	// 解析 pool_filter
+	if filterRaw, ok := configMap["pool_filter"].(map[string]any); ok {
+		config.PoolFilter = parseSignaturePoolFilter(filterRaw)
+	}
+
+	// 解析 enable_collection（采集开关）
+	if enableCollection, ok := configMap["enable_collection"].(bool); ok {
+		config.EnableCollection = enableCollection
+	}
+
+	// 解析 min_length（最小签名长度）
+	if minLength, ok := configMap["min_length"].(float64); ok {
+		config.MinLength = int(minLength)
+	} else {
+		config.MinLength = 350 // 默认值
+	}
+
+	return config
+}
+
+// parseSignaturePoolFilter 解析签名池过滤配置
+func parseSignaturePoolFilter(raw map[string]any) *SignaturePoolFilter {
+	if raw == nil {
+		return nil
+	}
+
+	filter := &SignaturePoolFilter{}
+
+	// 解析 models
+	if modelsRaw, ok := raw["models"]; ok {
+		switch v := modelsRaw.(type) {
+		case []string:
+			filter.Models = v
+		case []any:
+			models := make([]string, 0, len(v))
+			for _, item := range v {
+				if s, ok := item.(string); ok {
+					models = append(models, s)
+				}
+			}
+			filter.Models = models
+		}
+	}
+
+	return filter
+}

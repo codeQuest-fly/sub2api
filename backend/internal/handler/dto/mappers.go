@@ -445,3 +445,25 @@ func PromoCodeUsageFromService(u *service.PromoCodeUsage) *PromoCodeUsage {
 		User:        UserFromServiceShallow(u.User),
 	}
 }
+
+// SignatureFromService converts a service Signature to DTO.
+func SignatureFromService(s *service.Signature) Signature {
+	if s == nil {
+		return Signature{}
+	}
+	return Signature{
+		ID:                     s.ID,
+		Value:                  s.Value,
+		Hash:                   s.Hash,
+		Model:                  s.Model,
+		Source:                 s.Source,
+		Status:                 s.Status,
+		UseCount:               s.UseCount,
+		LastUsedAt:             s.LastUsedAt,
+		LastVerifiedAt:         s.LastVerifiedAt,
+		Notes:                  s.Notes,
+		CollectedFromAccountID: s.CollectedFromAccountID,
+		CreatedAt:              s.CreatedAt,
+		UpdatedAt:              s.UpdatedAt,
+	}
+}

@@ -167,7 +167,8 @@ export default {
       minutesAgo: '{n}分钟前',
       hoursAgo: '{n}小时前',
       daysAgo: '{n}天前'
-    }
+    },
+    createdAt: '创建时间'
   },
 
   // Navigation
@@ -193,7 +194,8 @@ export default {
     expand: '展开',
     logout: '退出登录',
     github: 'GitHub',
-    mySubscriptions: '我的订阅'
+    mySubscriptions: '我的订阅',
+    signatures: '签名管理'
   },
 
   // Auth
@@ -1417,6 +1419,20 @@ export default {
           idleTimeoutPlaceholder: '5',
           idleTimeoutHint: '会话空闲超时后自动释放'
         }
+      },
+      signatureConfig: {
+        title: 'Signature 处理',
+        hint: '启用后会在流式响应中处理 thinking 块的 signature',
+        notice: '此功能需要先在"签名管理"中导入签名池。启用后，系统会根据策略替换或补充 signature_delta 事件。',
+        strategy: '处理策略',
+        strategyAlwaysReplace: '总是替换',
+        strategyFillMissing: '仅补充缺失',
+        strategyAlwaysReplaceHint: '无论上游是否返回 signature，都替换为池中的签名',
+        strategyFillMissingHint: '仅在上游未返回 signature 时，从池中补充一个签名',
+        collection: '签名采集',
+        collectionHint: '从流式响应中自动采集签名并存储到签名池（source=collected）',
+        minLength: '最小签名长度',
+        minLengthHint: '只采集长度大于此值的签名（默认 350 字符）'
       },
       expired: '已过期',
       proxy: '代理',
@@ -2813,6 +2829,60 @@ export default {
         downloadChart: '下载',
         downloadChartHint: '下载图表图片'
       }
+    },
+
+    // Signatures
+    signatures: {
+      title: '签名管理',
+      description: '管理签名池，支持批量导入和配置',
+      total: '总数',
+      active: '活跃',
+      poolSize: '池大小',
+      search: '搜索签名...',
+      accountName: '账号名称',
+      allStatus: '全部状态',
+      allSource: '全部来源',
+      value: '签名值',
+      valuePlaceholder: '输入签名值（Base64 编码）',
+      valueRequired: '签名值不能为空',
+      model: '关联模型',
+      modelPlaceholder: '例如：claude-sonnet-4-20250514',
+      notes: '备注',
+      account: '采集账户',
+      useCount: '使用次数',
+      lastUsedAt: '最后使用',
+      status: {
+        label: '状态',
+        active: '活跃',
+        disabled: '已禁用',
+        expired: '已过期'
+      },
+      source: {
+        label: '来源',
+        collected: '采集',
+        imported: '导入',
+        manual: '手动'
+      },
+      create: '创建签名',
+      edit: '编辑签名',
+      batchImport: '批量导入',
+      import: '导入',
+      importing: '导入中...',
+      importValues: '签名列表',
+      importPlaceholder: '每行一个签名值（Base64 编码）',
+      importHint: '每行一个签名，最多支持 1000 条',
+      importEmpty: '请输入至少一个签名',
+      importTooMany: '单次最多导入 1000 条签名',
+      importSuccess: '导入成功：{imported} 条，重复：{duplicated} 条，失败：{failed} 条',
+      importFailed: '导入失败',
+      createSuccess: '签名创建成功',
+      createFailed: '签名创建失败',
+      updateSuccess: '签名更新成功',
+      updateFailed: '签名更新失败',
+      deleteConfirm: '确认删除',
+      deleteMessage: '确定要删除这条签名吗？此操作不可撤销。',
+      deleteSuccess: '签名删除成功',
+      deleteFailed: '签名删除失败'
     },
 
     // Settings

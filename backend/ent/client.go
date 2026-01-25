@@ -24,6 +24,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
+	"github.com/Wei-Shaw/sub2api/ent/signature"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
@@ -57,6 +58,8 @@ type Client struct {
 	RedeemCode *RedeemCodeClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
+	// Signature is the client for interacting with the Signature builders.
+	Signature *SignatureClient
 	// UsageLog is the client for interacting with the UsageLog builders.
 	UsageLog *UsageLogClient
 	// User is the client for interacting with the User builders.
@@ -89,6 +92,7 @@ func (c *Client) init() {
 	c.Proxy = NewProxyClient(c.config)
 	c.RedeemCode = NewRedeemCodeClient(c.config)
 	c.Setting = NewSettingClient(c.config)
+	c.Signature = NewSignatureClient(c.config)
 	c.UsageLog = NewUsageLogClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.UserAllowedGroup = NewUserAllowedGroupClient(c.config)
@@ -196,6 +200,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Proxy:                   NewProxyClient(cfg),
 		RedeemCode:              NewRedeemCodeClient(cfg),
 		Setting:                 NewSettingClient(cfg),
+		Signature:               NewSignatureClient(cfg),
 		UsageLog:                NewUsageLogClient(cfg),
 		User:                    NewUserClient(cfg),
 		UserAllowedGroup:        NewUserAllowedGroupClient(cfg),
@@ -230,6 +235,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Proxy:                   NewProxyClient(cfg),
 		RedeemCode:              NewRedeemCodeClient(cfg),
 		Setting:                 NewSettingClient(cfg),
+		Signature:               NewSignatureClient(cfg),
 		UsageLog:                NewUsageLogClient(cfg),
 		User:                    NewUserClient(cfg),
 		UserAllowedGroup:        NewUserAllowedGroupClient(cfg),
@@ -266,8 +272,9 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Group, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RedeemCode, c.Setting, c.UsageLog, c.User, c.UserAllowedGroup,
-		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
+		c.Proxy, c.RedeemCode, c.Setting, c.Signature, c.UsageLog, c.User,
+		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -278,8 +285,9 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.APIKey, c.Account, c.AccountGroup, c.Group, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RedeemCode, c.Setting, c.UsageLog, c.User, c.UserAllowedGroup,
-		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
+		c.Proxy, c.RedeemCode, c.Setting, c.Signature, c.UsageLog, c.User,
+		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -306,6 +314,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.RedeemCode.mutate(ctx, m)
 	case *SettingMutation:
 		return c.Setting.mutate(ctx, m)
+	case *SignatureMutation:
+		return c.Signature.mutate(ctx, m)
 	case *UsageLogMutation:
 		return c.UsageLog.mutate(ctx, m)
 	case *UserMutation:
@@ -1847,6 +1857,141 @@ func (c *SettingClient) mutate(ctx context.Context, m *SettingMutation) (Value, 
 	}
 }
 
+// SignatureClient is a client for the Signature schema.
+type SignatureClient struct {
+	config
+}
+
+// NewSignatureClient returns a client for the Signature from the given config.
+func NewSignatureClient(c config) *SignatureClient {
+	return &SignatureClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `signature.Hooks(f(g(h())))`.
+func (c *SignatureClient) Use(hooks ...Hook) {
+	c.hooks.Signature = append(c.hooks.Signature, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `signature.Intercept(f(g(h())))`.
+func (c *SignatureClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Signature = append(c.inters.Signature, interceptors...)
+}
+
+// Create returns a builder for creating a Signature entity.
+func (c *SignatureClient) Create() *SignatureCreate {
+	mutation := newSignatureMutation(c.config, OpCreate)
+	return &SignatureCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Signature entities.
+func (c *SignatureClient) CreateBulk(builders ...*SignatureCreate) *SignatureCreateBulk {
+	return &SignatureCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SignatureClient) MapCreateBulk(slice any, setFunc func(*SignatureCreate, int)) *SignatureCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SignatureCreateBulk{err: fmt.Errorf("calling to SignatureClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SignatureCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SignatureCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Signature.
+func (c *SignatureClient) Update() *SignatureUpdate {
+	mutation := newSignatureMutation(c.config, OpUpdate)
+	return &SignatureUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SignatureClient) UpdateOne(_m *Signature) *SignatureUpdateOne {
+	mutation := newSignatureMutation(c.config, OpUpdateOne, withSignature(_m))
+	return &SignatureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SignatureClient) UpdateOneID(id int64) *SignatureUpdateOne {
+	mutation := newSignatureMutation(c.config, OpUpdateOne, withSignatureID(id))
+	return &SignatureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Signature.
+func (c *SignatureClient) Delete() *SignatureDelete {
+	mutation := newSignatureMutation(c.config, OpDelete)
+	return &SignatureDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SignatureClient) DeleteOne(_m *Signature) *SignatureDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SignatureClient) DeleteOneID(id int64) *SignatureDeleteOne {
+	builder := c.Delete().Where(signature.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SignatureDeleteOne{builder}
+}
+
+// Query returns a query builder for Signature.
+func (c *SignatureClient) Query() *SignatureQuery {
+	return &SignatureQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSignature},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Signature entity by its id.
+func (c *SignatureClient) Get(ctx context.Context, id int64) (*Signature, error) {
+	return c.Query().Where(signature.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SignatureClient) GetX(ctx context.Context, id int64) *Signature {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SignatureClient) Hooks() []Hook {
+	hooks := c.hooks.Signature
+	return append(hooks[:len(hooks):len(hooks)], signature.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *SignatureClient) Interceptors() []Interceptor {
+	inters := c.inters.Signature
+	return append(inters[:len(inters):len(inters)], signature.Interceptors[:]...)
+}
+
+func (c *SignatureClient) mutate(ctx context.Context, m *SignatureMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SignatureCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SignatureUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SignatureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SignatureDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Signature mutation op: %q", m.Op())
+	}
+}
+
 // UsageLogClient is a client for the UsageLog schema.
 type UsageLogClient struct {
 	config
@@ -2974,13 +3119,13 @@ func (c *UserSubscriptionClient) mutate(ctx context.Context, m *UserSubscription
 type (
 	hooks struct {
 		APIKey, Account, AccountGroup, Group, PromoCode, PromoCodeUsage, Proxy,
-		RedeemCode, Setting, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
-		UserAttributeValue, UserSubscription []ent.Hook
+		RedeemCode, Setting, Signature, UsageLog, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Group, PromoCode, PromoCodeUsage, Proxy,
-		RedeemCode, Setting, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
-		UserAttributeValue, UserSubscription []ent.Interceptor
+		RedeemCode, Setting, Signature, UsageLog, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserSubscription []ent.Interceptor
 	}
 )
 

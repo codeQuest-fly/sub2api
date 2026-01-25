@@ -362,6 +362,105 @@
             </div>
           </div>
         </div>
+
+        <!-- Signature Processing Config (Anthropic API Key only) -->
+        <div v-if="account.platform === 'anthropic'" class="border-t border-gray-200 pt-4 dark:border-dark-600">
+          <div class="mb-3 flex items-center justify-between">
+            <div>
+              <label class="input-label mb-0">{{ t('admin.accounts.signatureConfig.title') }}</label>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.accounts.signatureConfig.hint') }}
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="signatureEnabled = !signatureEnabled"
+              :class="[
+                'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                signatureEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+              ]"
+            >
+              <span
+                :class="[
+                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  signatureEnabled ? 'translate-x-5' : 'translate-x-0'
+                ]"
+              />
+            </button>
+          </div>
+
+          <div v-if="signatureEnabled" class="space-y-4">
+            <div class="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+              <p class="text-xs text-blue-700 dark:text-blue-400">
+                <Icon name="exclamationTriangle" size="sm" class="mr-1 inline" :stroke-width="2" />
+                {{ t('admin.accounts.signatureConfig.notice') }}
+              </p>
+            </div>
+
+            <div>
+              <label class="input-label">{{ t('admin.accounts.signatureConfig.strategy') }}</label>
+              <div class="flex gap-2">
+                <button
+                  v-for="option in signatureStrategyOptions"
+                  :key="option.value"
+                  type="button"
+                  @click="signatureStrategy = option.value"
+                  :class="[
+                    'flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                    signatureStrategy === option.value
+                      ? 'bg-primary-100 text-primary-700 ring-1 ring-primary-500 dark:bg-primary-900/30 dark:text-primary-400'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-600 dark:text-gray-400 dark:hover:bg-dark-500'
+                  ]"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+              <p class="input-hint mt-2">{{ signatureStrategyHint }}</p>
+            </div>
+
+            <!-- Signature Collection Config -->
+            <div class="mt-4 border-t border-gray-200 pt-4 dark:border-dark-600">
+              <div class="mb-3 flex items-center justify-between">
+                <div>
+                  <label class="input-label mb-0">{{ t('admin.accounts.signatureConfig.collection') }}</label>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('admin.accounts.signatureConfig.collectionHint') }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  @click="signatureCollectionEnabled = !signatureCollectionEnabled"
+                  :class="[
+                    'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                    signatureCollectionEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                      signatureCollectionEnabled ? 'translate-x-5' : 'translate-x-0'
+                    ]"
+                  />
+                </button>
+              </div>
+
+              <div v-if="signatureCollectionEnabled" class="space-y-3">
+                <div>
+                  <label class="input-label">{{ t('admin.accounts.signatureConfig.minLength') }}</label>
+                  <input
+                    v-model.number="signatureMinLength"
+                    type="number"
+                    min="100"
+                    max="10000"
+                    step="50"
+                    class="input w-32"
+                  />
+                  <p class="input-hint mt-1">{{ t('admin.accounts.signatureConfig.minLengthHint') }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Temp Unschedulable Rules -->
@@ -897,6 +996,26 @@ const mixedScheduling = ref(false) // For antigravity accounts: enable mixed sch
 const tempUnschedEnabled = ref(false)
 const tempUnschedRules = ref<TempUnschedRuleForm[]>([])
 
+// Signature config state (Anthropic API Key only)
+const signatureEnabled = ref(false)
+const signatureStrategy = ref<'always_replace' | 'fill_missing'>('always_replace')
+const signatureCollectionEnabled = ref(false)
+const signatureMinLength = ref(350)
+
+// Signature strategy options
+const signatureStrategyOptions = computed<Array<{ value: 'always_replace' | 'fill_missing'; label: string }>>(() => [
+  { value: 'always_replace', label: t('admin.accounts.signatureConfig.strategyAlwaysReplace') },
+  { value: 'fill_missing', label: t('admin.accounts.signatureConfig.strategyFillMissing') }
+])
+
+// Signature strategy hint based on selected strategy
+const signatureStrategyHint = computed(() => {
+  if (signatureStrategy.value === 'always_replace') {
+    return t('admin.accounts.signatureConfig.strategyAlwaysReplaceHint')
+  }
+  return t('admin.accounts.signatureConfig.strategyFillMissingHint')
+})
+
 // Quota control state (Anthropic OAuth/SetupToken only)
 const windowCostEnabled = ref(false)
 const windowCostLimit = ref<number | null>(null)
@@ -991,6 +1110,9 @@ watch(
       // Load mixed scheduling setting (only for antigravity accounts)
       const extra = newAccount.extra as Record<string, unknown> | undefined
       mixedScheduling.value = extra?.mixed_scheduling === true
+
+      // Load signature config (Anthropic API Key only)
+      loadSignatureConfig(newAccount)
 
       // Load quota control settings (Anthropic OAuth/SetupToken only)
       loadQuotaControlSettings(newAccount)
@@ -1257,6 +1379,31 @@ function loadQuotaControlSettings(account: Account) {
   }
 }
 
+// Load signature config from account (Anthropic API Key only)
+function loadSignatureConfig(account: Account) {
+  // Reset signature config state
+  signatureEnabled.value = false
+  signatureStrategy.value = 'always_replace'
+
+  // Only applies to Anthropic API Key accounts
+  if (account.platform !== 'anthropic' || account.type !== 'apikey') {
+    return
+  }
+
+  // Load from extra field
+  const extra = account.extra as Record<string, unknown> | undefined
+  const sigConfig = extra?.signature_config as Record<string, unknown> | undefined
+  if (sigConfig) {
+    signatureEnabled.value = sigConfig.enabled === true
+    if (sigConfig.strategy === 'always_replace' || sigConfig.strategy === 'fill_missing') {
+      signatureStrategy.value = sigConfig.strategy
+    }
+    // 加载采集配置
+    signatureCollectionEnabled.value = sigConfig.enable_collection === true
+    signatureMinLength.value = (sigConfig.min_length as number) || 350
+  }
+}
+
 function formatTempUnschedKeywords(value: unknown) {
   if (Array.isArray(value)) {
     return value
@@ -1405,6 +1552,26 @@ const handleSubmit = async () => {
       } else {
         delete newExtra.max_sessions
         delete newExtra.session_idle_timeout_minutes
+      }
+
+      updatePayload.extra = newExtra
+    }
+
+    // For Anthropic API Key accounts, handle signature config in extra
+    if (props.account.platform === 'anthropic' && props.account.type === 'apikey') {
+      const currentExtra = (props.account.extra as Record<string, unknown>) || {}
+      const newExtra: Record<string, unknown> = { ...currentExtra }
+
+      // Signature config
+      if (signatureEnabled.value) {
+        newExtra.signature_config = {
+          enabled: true,
+          strategy: signatureStrategy.value,
+          enable_collection: signatureCollectionEnabled.value,
+          min_length: signatureMinLength.value
+        }
+      } else {
+        delete newExtra.signature_config
       }
 
       updatePayload.extra = newExtra

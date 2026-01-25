@@ -170,7 +170,8 @@ export default {
       minutesAgo: '{n}m ago',
       hoursAgo: '{n}h ago',
       daysAgo: '{n}d ago'
-    }
+    },
+    createdAt: 'Created At'
   },
 
   // Navigation
@@ -196,7 +197,8 @@ export default {
     expand: 'Expand',
     logout: 'Logout',
     github: 'GitHub',
-    mySubscriptions: 'My Subscriptions'
+    mySubscriptions: 'My Subscriptions',
+    signatures: 'Signatures'
   },
 
   // Auth
@@ -1284,6 +1286,20 @@ export default {
           idleTimeoutPlaceholder: '5',
           idleTimeoutHint: 'Sessions will be released after idle timeout'
         }
+      },
+      signatureConfig: {
+        title: 'Signature Processing',
+        hint: 'Enable to process thinking block signatures in streaming responses',
+        notice: 'This feature requires signatures to be imported in "Signature Management" first. When enabled, the system will replace or fill signature_delta events based on the strategy.',
+        strategy: 'Processing Strategy',
+        strategyAlwaysReplace: 'Always Replace',
+        strategyFillMissing: 'Fill Missing Only',
+        strategyAlwaysReplaceHint: 'Replace with pool signature regardless of upstream response',
+        strategyFillMissingHint: 'Only fill a signature from pool when upstream does not return one',
+        collection: 'Signature Collection',
+        collectionHint: 'Auto-collect signatures from streaming responses (source=collected)',
+        minLength: 'Min Signature Length',
+        minLengthHint: 'Only collect signatures longer than this value (default 350)'
       },
       expired: 'Expired',
       proxy: 'Proxy',
@@ -2659,6 +2675,60 @@ export default {
         downloadChart: 'Download',
         downloadChartHint: 'Download chart as image'
       }
+    },
+
+    // Signatures
+    signatures: {
+      title: 'Signature Management',
+      description: 'Manage signature pool with batch import and configuration',
+      total: 'Total',
+      active: 'Active',
+      poolSize: 'Pool Size',
+      search: 'Search signatures...',
+      accountName: 'Account Name',
+      allStatus: 'All Status',
+      allSource: 'All Source',
+      value: 'Signature Value',
+      valuePlaceholder: 'Enter signature value (Base64 encoded)',
+      valueRequired: 'Signature value is required',
+      model: 'Model',
+      modelPlaceholder: 'e.g., claude-sonnet-4-20250514',
+      notes: 'Notes',
+      account: 'Account',
+      useCount: 'Use Count',
+      lastUsedAt: 'Last Used',
+      status: {
+        label: 'Status',
+        active: 'Active',
+        disabled: 'Disabled',
+        expired: 'Expired'
+      },
+      source: {
+        label: 'Source',
+        collected: 'Collected',
+        imported: 'Imported',
+        manual: 'Manual'
+      },
+      create: 'Create Signature',
+      edit: 'Edit Signature',
+      batchImport: 'Batch Import',
+      import: 'Import',
+      importing: 'Importing...',
+      importValues: 'Signature List',
+      importPlaceholder: 'One signature per line (Base64 encoded)',
+      importHint: 'One signature per line, max 1000 entries',
+      importEmpty: 'Please enter at least one signature',
+      importTooMany: 'Maximum 1000 signatures per import',
+      importSuccess: 'Import completed: {imported} imported, {duplicated} duplicated, {failed} failed',
+      importFailed: 'Import failed',
+      createSuccess: 'Signature created successfully',
+      createFailed: 'Failed to create signature',
+      updateSuccess: 'Signature updated successfully',
+      updateFailed: 'Failed to update signature',
+      deleteConfirm: 'Confirm Delete',
+      deleteMessage: 'Are you sure you want to delete this signature? This action cannot be undone.',
+      deleteSuccess: 'Signature deleted successfully',
+      deleteFailed: 'Failed to delete signature'
     },
 
     // Settings

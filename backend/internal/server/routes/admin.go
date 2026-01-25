@@ -64,6 +64,9 @@ func RegisterAdminRoutes(
 
 		// 用户属性管理
 		registerUserAttributeRoutes(admin, h)
+
+		// 签名池管理
+		registerSignatureRoutes(admin, h)
 	}
 }
 
@@ -366,5 +369,21 @@ func registerUserAttributeRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		attrs.PUT("/reorder", h.Admin.UserAttribute.ReorderDefinitions)
 		attrs.PUT("/:id", h.Admin.UserAttribute.UpdateDefinition)
 		attrs.DELETE("/:id", h.Admin.UserAttribute.DeleteDefinition)
+	}
+}
+
+func registerSignatureRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	signatures := admin.Group("/signatures")
+	{
+		signatures.GET("", h.Admin.Signature.List)
+		signatures.GET("/stats", h.Admin.Signature.GetStats)
+		signatures.GET("/random", h.Admin.Signature.GetRandom)
+		signatures.GET("/:id", h.Admin.Signature.GetByID)
+		signatures.POST("", h.Admin.Signature.Create)
+		signatures.POST("/batch-import", h.Admin.Signature.BatchImport)
+		signatures.PUT("/:id", h.Admin.Signature.Update)
+		signatures.DELETE("/:id", h.Admin.Signature.Delete)
+		signatures.POST("/batch-delete", h.Admin.Signature.BatchDelete)
+		signatures.DELETE("/by-account/:account_id", h.Admin.Signature.DeleteByAccountID)
 	}
 }

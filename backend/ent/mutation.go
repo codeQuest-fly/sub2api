@@ -21,6 +21,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
+	"github.com/Wei-Shaw/sub2api/ent/signature"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
@@ -47,6 +48,7 @@ const (
 	TypeProxy                   = "Proxy"
 	TypeRedeemCode              = "RedeemCode"
 	TypeSetting                 = "Setting"
+	TypeSignature               = "Signature"
 	TypeUsageLog                = "UsageLog"
 	TypeUser                    = "User"
 	TypeUserAllowedGroup        = "UserAllowedGroup"
@@ -10368,6 +10370,1167 @@ func (m *SettingMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *SettingMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Setting edge %s", name)
+}
+
+// SignatureMutation represents an operation that mutates the Signature nodes in the graph.
+type SignatureMutation struct {
+	config
+	op                           Op
+	typ                          string
+	id                           *int64
+	created_at                   *time.Time
+	updated_at                   *time.Time
+	deleted_at                   *time.Time
+	value                        *string
+	hash                         *string
+	model                        *string
+	source                       *signature.Source
+	status                       *signature.Status
+	use_count                    *int64
+	adduse_count                 *int64
+	last_used_at                 *time.Time
+	last_verified_at             *time.Time
+	notes                        *string
+	collected_from_account_id    *int64
+	addcollected_from_account_id *int64
+	clearedFields                map[string]struct{}
+	done                         bool
+	oldValue                     func(context.Context) (*Signature, error)
+	predicates                   []predicate.Signature
+}
+
+var _ ent.Mutation = (*SignatureMutation)(nil)
+
+// signatureOption allows management of the mutation configuration using functional options.
+type signatureOption func(*SignatureMutation)
+
+// newSignatureMutation creates new mutation for the Signature entity.
+func newSignatureMutation(c config, op Op, opts ...signatureOption) *SignatureMutation {
+	m := &SignatureMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSignature,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSignatureID sets the ID field of the mutation.
+func withSignatureID(id int64) signatureOption {
+	return func(m *SignatureMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Signature
+		)
+		m.oldValue = func(ctx context.Context) (*Signature, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Signature.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSignature sets the old Signature of the mutation.
+func withSignature(node *Signature) signatureOption {
+	return func(m *SignatureMutation) {
+		m.oldValue = func(context.Context) (*Signature, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SignatureMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SignatureMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SignatureMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SignatureMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Signature.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SignatureMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SignatureMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SignatureMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SignatureMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SignatureMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SignatureMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *SignatureMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *SignatureMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *SignatureMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[signature.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *SignatureMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[signature.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *SignatureMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, signature.FieldDeletedAt)
+}
+
+// SetValue sets the "value" field.
+func (m *SignatureMutation) SetValue(s string) {
+	m.value = &s
+}
+
+// Value returns the value of the "value" field in the mutation.
+func (m *SignatureMutation) Value() (r string, exists bool) {
+	v := m.value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValue returns the old "value" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldValue(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValue: %w", err)
+	}
+	return oldValue.Value, nil
+}
+
+// ResetValue resets all changes to the "value" field.
+func (m *SignatureMutation) ResetValue() {
+	m.value = nil
+}
+
+// SetHash sets the "hash" field.
+func (m *SignatureMutation) SetHash(s string) {
+	m.hash = &s
+}
+
+// Hash returns the value of the "hash" field in the mutation.
+func (m *SignatureMutation) Hash() (r string, exists bool) {
+	v := m.hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHash returns the old "hash" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHash: %w", err)
+	}
+	return oldValue.Hash, nil
+}
+
+// ResetHash resets all changes to the "hash" field.
+func (m *SignatureMutation) ResetHash() {
+	m.hash = nil
+}
+
+// SetModel sets the "model" field.
+func (m *SignatureMutation) SetModel(s string) {
+	m.model = &s
+}
+
+// Model returns the value of the "model" field in the mutation.
+func (m *SignatureMutation) Model() (r string, exists bool) {
+	v := m.model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModel returns the old "model" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldModel(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModel: %w", err)
+	}
+	return oldValue.Model, nil
+}
+
+// ClearModel clears the value of the "model" field.
+func (m *SignatureMutation) ClearModel() {
+	m.model = nil
+	m.clearedFields[signature.FieldModel] = struct{}{}
+}
+
+// ModelCleared returns if the "model" field was cleared in this mutation.
+func (m *SignatureMutation) ModelCleared() bool {
+	_, ok := m.clearedFields[signature.FieldModel]
+	return ok
+}
+
+// ResetModel resets all changes to the "model" field.
+func (m *SignatureMutation) ResetModel() {
+	m.model = nil
+	delete(m.clearedFields, signature.FieldModel)
+}
+
+// SetSource sets the "source" field.
+func (m *SignatureMutation) SetSource(s signature.Source) {
+	m.source = &s
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *SignatureMutation) Source() (r signature.Source, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldSource(ctx context.Context) (v signature.Source, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *SignatureMutation) ResetSource() {
+	m.source = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *SignatureMutation) SetStatus(s signature.Status) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *SignatureMutation) Status() (r signature.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldStatus(ctx context.Context) (v signature.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *SignatureMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetUseCount sets the "use_count" field.
+func (m *SignatureMutation) SetUseCount(i int64) {
+	m.use_count = &i
+	m.adduse_count = nil
+}
+
+// UseCount returns the value of the "use_count" field in the mutation.
+func (m *SignatureMutation) UseCount() (r int64, exists bool) {
+	v := m.use_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUseCount returns the old "use_count" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldUseCount(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUseCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUseCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUseCount: %w", err)
+	}
+	return oldValue.UseCount, nil
+}
+
+// AddUseCount adds i to the "use_count" field.
+func (m *SignatureMutation) AddUseCount(i int64) {
+	if m.adduse_count != nil {
+		*m.adduse_count += i
+	} else {
+		m.adduse_count = &i
+	}
+}
+
+// AddedUseCount returns the value that was added to the "use_count" field in this mutation.
+func (m *SignatureMutation) AddedUseCount() (r int64, exists bool) {
+	v := m.adduse_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUseCount resets all changes to the "use_count" field.
+func (m *SignatureMutation) ResetUseCount() {
+	m.use_count = nil
+	m.adduse_count = nil
+}
+
+// SetLastUsedAt sets the "last_used_at" field.
+func (m *SignatureMutation) SetLastUsedAt(t time.Time) {
+	m.last_used_at = &t
+}
+
+// LastUsedAt returns the value of the "last_used_at" field in the mutation.
+func (m *SignatureMutation) LastUsedAt() (r time.Time, exists bool) {
+	v := m.last_used_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastUsedAt returns the old "last_used_at" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldLastUsedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastUsedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastUsedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastUsedAt: %w", err)
+	}
+	return oldValue.LastUsedAt, nil
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (m *SignatureMutation) ClearLastUsedAt() {
+	m.last_used_at = nil
+	m.clearedFields[signature.FieldLastUsedAt] = struct{}{}
+}
+
+// LastUsedAtCleared returns if the "last_used_at" field was cleared in this mutation.
+func (m *SignatureMutation) LastUsedAtCleared() bool {
+	_, ok := m.clearedFields[signature.FieldLastUsedAt]
+	return ok
+}
+
+// ResetLastUsedAt resets all changes to the "last_used_at" field.
+func (m *SignatureMutation) ResetLastUsedAt() {
+	m.last_used_at = nil
+	delete(m.clearedFields, signature.FieldLastUsedAt)
+}
+
+// SetLastVerifiedAt sets the "last_verified_at" field.
+func (m *SignatureMutation) SetLastVerifiedAt(t time.Time) {
+	m.last_verified_at = &t
+}
+
+// LastVerifiedAt returns the value of the "last_verified_at" field in the mutation.
+func (m *SignatureMutation) LastVerifiedAt() (r time.Time, exists bool) {
+	v := m.last_verified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastVerifiedAt returns the old "last_verified_at" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldLastVerifiedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastVerifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastVerifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastVerifiedAt: %w", err)
+	}
+	return oldValue.LastVerifiedAt, nil
+}
+
+// ClearLastVerifiedAt clears the value of the "last_verified_at" field.
+func (m *SignatureMutation) ClearLastVerifiedAt() {
+	m.last_verified_at = nil
+	m.clearedFields[signature.FieldLastVerifiedAt] = struct{}{}
+}
+
+// LastVerifiedAtCleared returns if the "last_verified_at" field was cleared in this mutation.
+func (m *SignatureMutation) LastVerifiedAtCleared() bool {
+	_, ok := m.clearedFields[signature.FieldLastVerifiedAt]
+	return ok
+}
+
+// ResetLastVerifiedAt resets all changes to the "last_verified_at" field.
+func (m *SignatureMutation) ResetLastVerifiedAt() {
+	m.last_verified_at = nil
+	delete(m.clearedFields, signature.FieldLastVerifiedAt)
+}
+
+// SetNotes sets the "notes" field.
+func (m *SignatureMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *SignatureMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldNotes(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *SignatureMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[signature.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *SignatureMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[signature.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *SignatureMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, signature.FieldNotes)
+}
+
+// SetCollectedFromAccountID sets the "collected_from_account_id" field.
+func (m *SignatureMutation) SetCollectedFromAccountID(i int64) {
+	m.collected_from_account_id = &i
+	m.addcollected_from_account_id = nil
+}
+
+// CollectedFromAccountID returns the value of the "collected_from_account_id" field in the mutation.
+func (m *SignatureMutation) CollectedFromAccountID() (r int64, exists bool) {
+	v := m.collected_from_account_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCollectedFromAccountID returns the old "collected_from_account_id" field's value of the Signature entity.
+// If the Signature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignatureMutation) OldCollectedFromAccountID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCollectedFromAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCollectedFromAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCollectedFromAccountID: %w", err)
+	}
+	return oldValue.CollectedFromAccountID, nil
+}
+
+// AddCollectedFromAccountID adds i to the "collected_from_account_id" field.
+func (m *SignatureMutation) AddCollectedFromAccountID(i int64) {
+	if m.addcollected_from_account_id != nil {
+		*m.addcollected_from_account_id += i
+	} else {
+		m.addcollected_from_account_id = &i
+	}
+}
+
+// AddedCollectedFromAccountID returns the value that was added to the "collected_from_account_id" field in this mutation.
+func (m *SignatureMutation) AddedCollectedFromAccountID() (r int64, exists bool) {
+	v := m.addcollected_from_account_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCollectedFromAccountID clears the value of the "collected_from_account_id" field.
+func (m *SignatureMutation) ClearCollectedFromAccountID() {
+	m.collected_from_account_id = nil
+	m.addcollected_from_account_id = nil
+	m.clearedFields[signature.FieldCollectedFromAccountID] = struct{}{}
+}
+
+// CollectedFromAccountIDCleared returns if the "collected_from_account_id" field was cleared in this mutation.
+func (m *SignatureMutation) CollectedFromAccountIDCleared() bool {
+	_, ok := m.clearedFields[signature.FieldCollectedFromAccountID]
+	return ok
+}
+
+// ResetCollectedFromAccountID resets all changes to the "collected_from_account_id" field.
+func (m *SignatureMutation) ResetCollectedFromAccountID() {
+	m.collected_from_account_id = nil
+	m.addcollected_from_account_id = nil
+	delete(m.clearedFields, signature.FieldCollectedFromAccountID)
+}
+
+// Where appends a list predicates to the SignatureMutation builder.
+func (m *SignatureMutation) Where(ps ...predicate.Signature) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SignatureMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SignatureMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Signature, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SignatureMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SignatureMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Signature).
+func (m *SignatureMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SignatureMutation) Fields() []string {
+	fields := make([]string, 0, 13)
+	if m.created_at != nil {
+		fields = append(fields, signature.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, signature.FieldUpdatedAt)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, signature.FieldDeletedAt)
+	}
+	if m.value != nil {
+		fields = append(fields, signature.FieldValue)
+	}
+	if m.hash != nil {
+		fields = append(fields, signature.FieldHash)
+	}
+	if m.model != nil {
+		fields = append(fields, signature.FieldModel)
+	}
+	if m.source != nil {
+		fields = append(fields, signature.FieldSource)
+	}
+	if m.status != nil {
+		fields = append(fields, signature.FieldStatus)
+	}
+	if m.use_count != nil {
+		fields = append(fields, signature.FieldUseCount)
+	}
+	if m.last_used_at != nil {
+		fields = append(fields, signature.FieldLastUsedAt)
+	}
+	if m.last_verified_at != nil {
+		fields = append(fields, signature.FieldLastVerifiedAt)
+	}
+	if m.notes != nil {
+		fields = append(fields, signature.FieldNotes)
+	}
+	if m.collected_from_account_id != nil {
+		fields = append(fields, signature.FieldCollectedFromAccountID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SignatureMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case signature.FieldCreatedAt:
+		return m.CreatedAt()
+	case signature.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case signature.FieldDeletedAt:
+		return m.DeletedAt()
+	case signature.FieldValue:
+		return m.Value()
+	case signature.FieldHash:
+		return m.Hash()
+	case signature.FieldModel:
+		return m.Model()
+	case signature.FieldSource:
+		return m.Source()
+	case signature.FieldStatus:
+		return m.Status()
+	case signature.FieldUseCount:
+		return m.UseCount()
+	case signature.FieldLastUsedAt:
+		return m.LastUsedAt()
+	case signature.FieldLastVerifiedAt:
+		return m.LastVerifiedAt()
+	case signature.FieldNotes:
+		return m.Notes()
+	case signature.FieldCollectedFromAccountID:
+		return m.CollectedFromAccountID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SignatureMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case signature.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case signature.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case signature.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case signature.FieldValue:
+		return m.OldValue(ctx)
+	case signature.FieldHash:
+		return m.OldHash(ctx)
+	case signature.FieldModel:
+		return m.OldModel(ctx)
+	case signature.FieldSource:
+		return m.OldSource(ctx)
+	case signature.FieldStatus:
+		return m.OldStatus(ctx)
+	case signature.FieldUseCount:
+		return m.OldUseCount(ctx)
+	case signature.FieldLastUsedAt:
+		return m.OldLastUsedAt(ctx)
+	case signature.FieldLastVerifiedAt:
+		return m.OldLastVerifiedAt(ctx)
+	case signature.FieldNotes:
+		return m.OldNotes(ctx)
+	case signature.FieldCollectedFromAccountID:
+		return m.OldCollectedFromAccountID(ctx)
+	}
+	return nil, fmt.Errorf("unknown Signature field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SignatureMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case signature.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case signature.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case signature.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case signature.FieldValue:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValue(v)
+		return nil
+	case signature.FieldHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHash(v)
+		return nil
+	case signature.FieldModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModel(v)
+		return nil
+	case signature.FieldSource:
+		v, ok := value.(signature.Source)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
+		return nil
+	case signature.FieldStatus:
+		v, ok := value.(signature.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case signature.FieldUseCount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUseCount(v)
+		return nil
+	case signature.FieldLastUsedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastUsedAt(v)
+		return nil
+	case signature.FieldLastVerifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastVerifiedAt(v)
+		return nil
+	case signature.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case signature.FieldCollectedFromAccountID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCollectedFromAccountID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Signature field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SignatureMutation) AddedFields() []string {
+	var fields []string
+	if m.adduse_count != nil {
+		fields = append(fields, signature.FieldUseCount)
+	}
+	if m.addcollected_from_account_id != nil {
+		fields = append(fields, signature.FieldCollectedFromAccountID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SignatureMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case signature.FieldUseCount:
+		return m.AddedUseCount()
+	case signature.FieldCollectedFromAccountID:
+		return m.AddedCollectedFromAccountID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SignatureMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case signature.FieldUseCount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUseCount(v)
+		return nil
+	case signature.FieldCollectedFromAccountID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCollectedFromAccountID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Signature numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SignatureMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(signature.FieldDeletedAt) {
+		fields = append(fields, signature.FieldDeletedAt)
+	}
+	if m.FieldCleared(signature.FieldModel) {
+		fields = append(fields, signature.FieldModel)
+	}
+	if m.FieldCleared(signature.FieldLastUsedAt) {
+		fields = append(fields, signature.FieldLastUsedAt)
+	}
+	if m.FieldCleared(signature.FieldLastVerifiedAt) {
+		fields = append(fields, signature.FieldLastVerifiedAt)
+	}
+	if m.FieldCleared(signature.FieldNotes) {
+		fields = append(fields, signature.FieldNotes)
+	}
+	if m.FieldCleared(signature.FieldCollectedFromAccountID) {
+		fields = append(fields, signature.FieldCollectedFromAccountID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SignatureMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SignatureMutation) ClearField(name string) error {
+	switch name {
+	case signature.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	case signature.FieldModel:
+		m.ClearModel()
+		return nil
+	case signature.FieldLastUsedAt:
+		m.ClearLastUsedAt()
+		return nil
+	case signature.FieldLastVerifiedAt:
+		m.ClearLastVerifiedAt()
+		return nil
+	case signature.FieldNotes:
+		m.ClearNotes()
+		return nil
+	case signature.FieldCollectedFromAccountID:
+		m.ClearCollectedFromAccountID()
+		return nil
+	}
+	return fmt.Errorf("unknown Signature nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SignatureMutation) ResetField(name string) error {
+	switch name {
+	case signature.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case signature.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case signature.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case signature.FieldValue:
+		m.ResetValue()
+		return nil
+	case signature.FieldHash:
+		m.ResetHash()
+		return nil
+	case signature.FieldModel:
+		m.ResetModel()
+		return nil
+	case signature.FieldSource:
+		m.ResetSource()
+		return nil
+	case signature.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case signature.FieldUseCount:
+		m.ResetUseCount()
+		return nil
+	case signature.FieldLastUsedAt:
+		m.ResetLastUsedAt()
+		return nil
+	case signature.FieldLastVerifiedAt:
+		m.ResetLastVerifiedAt()
+		return nil
+	case signature.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case signature.FieldCollectedFromAccountID:
+		m.ResetCollectedFromAccountID()
+		return nil
+	}
+	return fmt.Errorf("unknown Signature field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SignatureMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SignatureMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SignatureMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SignatureMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SignatureMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SignatureMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SignatureMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown Signature unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SignatureMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown Signature edge %s", name)
 }
 
 // UsageLogMutation represents an operation that mutates the UsageLog nodes in the graph.

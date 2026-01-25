@@ -295,6 +295,18 @@ const routes: RouteRecordRaw[] = [
       descriptionKey: 'admin.usage.description'
     }
   },
+  {
+    path: '/admin/signatures',
+    name: 'AdminSignatures',
+    component: () => import('@/views/admin/SignaturesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Signature Management',
+      titleKey: 'admin.signatures.title',
+      descriptionKey: 'admin.signatures.description'
+    }
+  },
 
   // ==================== 404 Not Found ====================
   {

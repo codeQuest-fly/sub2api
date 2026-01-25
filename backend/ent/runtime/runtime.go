@@ -15,6 +15,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/schema"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
+	"github.com/Wei-Shaw/sub2api/ent/signature"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 	"github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
@@ -495,6 +496,55 @@ func init() {
 	setting.DefaultUpdatedAt = settingDescUpdatedAt.Default.(func() time.Time)
 	// setting.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	setting.UpdateDefaultUpdatedAt = settingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	signatureMixin := schema.Signature{}.Mixin()
+	signatureMixinHooks1 := signatureMixin[1].Hooks()
+	signature.Hooks[0] = signatureMixinHooks1[0]
+	signatureMixinInters1 := signatureMixin[1].Interceptors()
+	signature.Interceptors[0] = signatureMixinInters1[0]
+	signatureMixinFields0 := signatureMixin[0].Fields()
+	_ = signatureMixinFields0
+	signatureFields := schema.Signature{}.Fields()
+	_ = signatureFields
+	// signatureDescCreatedAt is the schema descriptor for created_at field.
+	signatureDescCreatedAt := signatureMixinFields0[0].Descriptor()
+	// signature.DefaultCreatedAt holds the default value on creation for the created_at field.
+	signature.DefaultCreatedAt = signatureDescCreatedAt.Default.(func() time.Time)
+	// signatureDescUpdatedAt is the schema descriptor for updated_at field.
+	signatureDescUpdatedAt := signatureMixinFields0[1].Descriptor()
+	// signature.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	signature.DefaultUpdatedAt = signatureDescUpdatedAt.Default.(func() time.Time)
+	// signature.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	signature.UpdateDefaultUpdatedAt = signatureDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// signatureDescValue is the schema descriptor for value field.
+	signatureDescValue := signatureFields[0].Descriptor()
+	// signature.ValueValidator is a validator for the "value" field. It is called by the builders before save.
+	signature.ValueValidator = signatureDescValue.Validators[0].(func(string) error)
+	// signatureDescHash is the schema descriptor for hash field.
+	signatureDescHash := signatureFields[1].Descriptor()
+	// signature.HashValidator is a validator for the "hash" field. It is called by the builders before save.
+	signature.HashValidator = func() func(string) error {
+		validators := signatureDescHash.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(hash string) error {
+			for _, fn := range fns {
+				if err := fn(hash); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// signatureDescModel is the schema descriptor for model field.
+	signatureDescModel := signatureFields[2].Descriptor()
+	// signature.ModelValidator is a validator for the "model" field. It is called by the builders before save.
+	signature.ModelValidator = signatureDescModel.Validators[0].(func(string) error)
+	// signatureDescUseCount is the schema descriptor for use_count field.
+	signatureDescUseCount := signatureFields[5].Descriptor()
+	// signature.DefaultUseCount holds the default value on creation for the use_count field.
+	signature.DefaultUseCount = signatureDescUseCount.Default.(int64)
 	usagelogFields := schema.UsageLog{}.Fields()
 	_ = usagelogFields
 	// usagelogDescRequestID is the schema descriptor for request_id field.

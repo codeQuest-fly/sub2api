@@ -307,3 +307,21 @@ type PromoCodeUsage struct {
 
 	User *User `json:"user,omitempty"`
 }
+
+// Signature 签名池实体
+type Signature struct {
+	ID                       int64      `json:"id"`
+	Value                    string     `json:"value"`
+	Hash                     string     `json:"hash"`
+	Model                    *string    `json:"model"`
+	Source                   string     `json:"source"`
+	Status                   string     `json:"status"`
+	UseCount                 int64      `json:"use_count"`
+	LastUsedAt               *time.Time `json:"last_used_at"`
+	LastVerifiedAt           *time.Time `json:"last_verified_at"`
+	Notes                    *string    `json:"notes"`
+	CollectedFromAccountID   *int64     `json:"collected_from_account_id"`
+	CollectedFromAccountName *string    `json:"collected_from_account_name"`
+	CreatedAt                time.Time  `json:"created_at"`
+	UpdatedAt                time.Time  `json:"updated_at"`
+}

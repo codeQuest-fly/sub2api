@@ -434,6 +434,66 @@ var (
 		Columns:    SettingsColumns,
 		PrimaryKey: []*schema.Column{SettingsColumns[0]},
 	}
+	// SignaturesColumns holds the columns for the "signatures" table.
+	SignaturesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "value", Type: field.TypeString, Size: 2147483647},
+		{Name: "hash", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "model", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "source", Type: field.TypeEnum, Enums: []string{"collected", "imported", "manual"}, Default: "manual"},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "disabled", "expired"}, Default: "active"},
+		{Name: "use_count", Type: field.TypeInt64, Default: 0},
+		{Name: "last_used_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "last_verified_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "notes", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "collected_from_account_id", Type: field.TypeInt64, Nullable: true},
+	}
+	// SignaturesTable holds the schema information for the "signatures" table.
+	SignaturesTable = &schema.Table{
+		Name:       "signatures",
+		Columns:    SignaturesColumns,
+		PrimaryKey: []*schema.Column{SignaturesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "signature_status",
+				Unique:  false,
+				Columns: []*schema.Column{SignaturesColumns[8]},
+			},
+			{
+				Name:    "signature_source",
+				Unique:  false,
+				Columns: []*schema.Column{SignaturesColumns[7]},
+			},
+			{
+				Name:    "signature_model",
+				Unique:  false,
+				Columns: []*schema.Column{SignaturesColumns[6]},
+			},
+			{
+				Name:    "signature_use_count",
+				Unique:  false,
+				Columns: []*schema.Column{SignaturesColumns[9]},
+			},
+			{
+				Name:    "signature_last_used_at",
+				Unique:  false,
+				Columns: []*schema.Column{SignaturesColumns[10]},
+			},
+			{
+				Name:    "signature_deleted_at",
+				Unique:  false,
+				Columns: []*schema.Column{SignaturesColumns[3]},
+			},
+			{
+				Name:    "signature_collected_from_account_id",
+				Unique:  false,
+				Columns: []*schema.Column{SignaturesColumns[13]},
+			},
+		},
+	}
 	// UsageLogsColumns holds the columns for the "usage_logs" table.
 	UsageLogsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -805,6 +865,7 @@ var (
 		ProxiesTable,
 		RedeemCodesTable,
 		SettingsTable,
+		SignaturesTable,
 		UsageLogsTable,
 		UsersTable,
 		UserAllowedGroupsTable,
@@ -850,6 +911,9 @@ func init() {
 	}
 	SettingsTable.Annotation = &entsql.Annotation{
 		Table: "settings",
+	}
+	SignaturesTable.Annotation = &entsql.Annotation{
+		Table: "signatures",
 	}
 	UsageLogsTable.ForeignKeys[0].RefTable = APIKeysTable
 	UsageLogsTable.ForeignKeys[1].RefTable = AccountsTable
