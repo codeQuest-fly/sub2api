@@ -36,6 +36,9 @@ type Setting func(*sql.Selector)
 // Signature is the predicate function for signature builders.
 type Signature func(*sql.Selector)
 
+// UsageCleanupTask is the predicate function for usagecleanuptask builders.
+type UsageCleanupTask func(*sql.Selector)
+
 // UsageLog is the predicate function for usagelog builders.
 type UsageLog func(*sql.Selector)
 

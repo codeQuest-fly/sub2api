@@ -1,8 +1,10 @@
 package service
 
 type SystemSettings struct {
-	RegistrationEnabled bool
-	EmailVerifyEnabled  bool
+	RegistrationEnabled  bool
+	EmailVerifyEnabled   bool
+	PromoCodeEnabled     bool
+	PasswordResetEnabled bool
 
 	SMTPHost               string
 	SMTPPort               int
@@ -25,13 +27,14 @@ type SystemSettings struct {
 	LinuxDoConnectClientSecretConfigured bool
 	LinuxDoConnectRedirectURL            string
 
-	SiteName     string
-	SiteLogo     string
-	SiteSubtitle string
-	APIBaseURL   string
-	ContactInfo  string
-	DocURL       string
-	HomeContent  string
+	SiteName            string
+	SiteLogo            string
+	SiteSubtitle        string
+	APIBaseURL          string
+	ContactInfo         string
+	DocURL              string
+	HomeContent         string
+	HideCcsImportButton bool
 
 	DefaultConcurrency int
 	DefaultBalance     float64
@@ -55,19 +58,22 @@ type SystemSettings struct {
 }
 
 type PublicSettings struct {
-	RegistrationEnabled bool
-	EmailVerifyEnabled  bool
-	TurnstileEnabled    bool
-	TurnstileSiteKey    string
-	SiteName            string
-	SiteLogo            string
-	SiteSubtitle        string
-	APIBaseURL          string
-	ContactInfo         string
-	DocURL              string
-	HomeContent         string
-	LinuxDoOAuthEnabled bool
-	Version             string
+	RegistrationEnabled  bool
+	EmailVerifyEnabled   bool
+	PromoCodeEnabled     bool
+	PasswordResetEnabled bool
+	TurnstileEnabled     bool
+	TurnstileSiteKey     string
+	SiteName             string
+	SiteLogo             string
+	SiteSubtitle         string
+	APIBaseURL           string
+	ContactInfo          string
+	DocURL               string
+	HomeContent          string
+	HideCcsImportButton  bool
+	LinuxDoOAuthEnabled  bool
+	Version              string
 }
 
 // StreamTimeoutSettings 流超时处理配置（仅控制超时后的处理方式，超时判定由网关配置控制）

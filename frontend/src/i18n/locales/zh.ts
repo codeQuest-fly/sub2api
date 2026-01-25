@@ -166,7 +166,13 @@ export default {
       justNow: '刚刚',
       minutesAgo: '{n}分钟前',
       hoursAgo: '{n}小时前',
-      daysAgo: '{n}天前'
+      daysAgo: '{n}天前',
+      countdown: {
+        daysHours: '{d}d {h}h',
+        hoursMinutes: '{h}h {m}m',
+        minutes: '{m}m',
+        withSuffix: '{time} 后解除'
+      }
     },
     createdAt: '创建时间'
   },
@@ -195,7 +201,8 @@ export default {
     logout: '退出登录',
     github: 'GitHub',
     mySubscriptions: '我的订阅',
-    signatures: '签名管理'
+    signatures: '签名管理',
+    docs: '文档'
   },
 
   // Auth
@@ -263,7 +270,36 @@ export default {
       code: '授权码',
       state: '状态',
       fullUrl: '完整URL'
-    }
+    },
+    // 忘记密码
+    forgotPassword: '忘记密码？',
+    forgotPasswordTitle: '重置密码',
+    forgotPasswordHint: '输入您的邮箱地址，我们将向您发送密码重置链接。',
+    sendResetLink: '发送重置链接',
+    sendingResetLink: '发送中...',
+    sendResetLinkFailed: '发送重置链接失败，请重试。',
+    resetEmailSent: '重置链接已发送',
+    resetEmailSentHint: '如果该邮箱已注册，您将很快收到密码重置链接。请检查您的收件箱和垃圾邮件文件夹。',
+    backToLogin: '返回登录',
+    rememberedPassword: '想起密码了？',
+    // 重置密码
+    resetPasswordTitle: '设置新密码',
+    resetPasswordHint: '请在下方输入您的新密码。',
+    newPassword: '新密码',
+    newPasswordPlaceholder: '输入新密码',
+    confirmPassword: '确认密码',
+    confirmPasswordPlaceholder: '再次输入新密码',
+    confirmPasswordRequired: '请确认您的密码',
+    passwordsDoNotMatch: '两次输入的密码不一致',
+    resetPassword: '重置密码',
+    resettingPassword: '重置中...',
+    resetPasswordFailed: '重置密码失败，请重试。',
+    passwordResetSuccess: '密码重置成功',
+    passwordResetSuccessHint: '您的密码已重置。现在可以使用新密码登录。',
+    invalidResetLink: '无效的重置链接',
+    invalidResetLinkHint: '此密码重置链接无效或已过期。请重新请求一个新链接。',
+    requestNewResetLink: '请求新的重置链接',
+    invalidOrExpiredToken: '密码重置链接无效或已过期。请重新请求一个新链接。'
   },
 
   // Dashboard
@@ -570,7 +606,10 @@ export default {
     previous: '上一页',
     next: '下一页',
     perPage: '每页',
-    goToPage: '跳转到第 {page} 页'
+    goToPage: '跳转到第 {page} 页',
+    jumpTo: '跳转页',
+    jumpPlaceholder: '页码',
+    jumpAction: '跳转'
   },
 
   // Errors
@@ -1023,7 +1062,7 @@ export default {
       title: '订阅管理',
       description: '管理用户订阅和配额限制',
       assignSubscription: '分配订阅',
-      extendSubscription: '延长订阅',
+      adjustSubscription: '调整订阅',
       revokeSubscription: '撤销订阅',
       allStatus: '全部状态',
       allGroups: '全部分组',
@@ -1038,6 +1077,7 @@ export default {
       resetInHoursMinutes: '{hours} 小时 {minutes} 分钟后重置',
       resetInDaysHours: '{days} 天 {hours} 小时后重置',
       daysRemaining: '天剩余',
+      remainingDays: '剩余天数',
       noExpiration: '无过期时间',
       status: {
         active: '生效中',
@@ -1056,28 +1096,32 @@ export default {
         user: '用户',
         group: '订阅分组',
         validityDays: '有效期（天）',
-        extendDays: '延长天数'
+        adjustDays: '调整天数'
       },
       selectUser: '选择用户',
       selectGroup: '选择订阅分组',
       groupHint: '仅显示订阅计费类型的分组',
       validityHint: '订阅的有效天数',
-      extendingFor: '为以下用户延长订阅',
+      adjustingFor: '为以下用户调整订阅',
       currentExpiration: '当前到期时间',
+      adjustDaysPlaceholder: '正数延长，负数缩短',
+      adjustHint: '输入正数延长订阅，负数缩短订阅（缩短后剩余天数需大于0）',
       assign: '分配',
       assigning: '分配中...',
-      extend: '延长',
-      extending: '延长中...',
+      adjust: '调整',
+      adjusting: '调整中...',
       revoke: '撤销',
       noSubscriptionsYet: '暂无订阅',
       assignFirstSubscription: '分配一个订阅以开始使用。',
       subscriptionAssigned: '订阅分配成功',
-      subscriptionExtended: '订阅延长成功',
+      subscriptionAdjusted: '订阅调整成功',
       subscriptionRevoked: '订阅撤销成功',
       failedToLoad: '加载订阅列表失败',
       failedToAssign: '分配订阅失败',
-      failedToExtend: '延长订阅失败',
+      failedToAdjust: '调整订阅失败',
       failedToRevoke: '撤销订阅失败',
+      adjustWouldExpire: '调整后剩余天数必须大于0',
+      adjustOutOfRange: '调整天数必须在 -36500 到 36500 之间',
       pleaseSelectUser: '请选择用户',
       pleaseSelectGroup: '请选择分组',
       validityDaysRequired: '请输入有效的天数（至少1天）',
@@ -1089,6 +1133,13 @@ export default {
       title: '账号管理',
       description: '管理 AI 平台账号和 Cookie',
       createAccount: '添加账号',
+      autoRefresh: '自动刷新',
+      enableAutoRefresh: '启用自动刷新',
+      refreshInterval5s: '5 秒',
+      refreshInterval10s: '10 秒',
+      refreshInterval15s: '15 秒',
+      refreshInterval30s: '30 秒',
+      autoRefreshCountdown: '自动刷新：{seconds}s',
       syncFromCrs: '从 CRS 同步',
       syncFromCrsTitle: '从 CRS 同步账号',
       syncFromCrsDesc:
@@ -1144,6 +1195,7 @@ export default {
         todayStats: '今日统计',
         groups: '分组',
         usageWindows: '用量窗口',
+        proxy: '代理',
         lastUsed: '最近使用',
         expiresAt: '过期时间',
         actions: '操作'
@@ -1197,6 +1249,8 @@ export default {
         cooldown: '冷却中',
         paused: '暂停',
         limited: '限流',
+        rateLimited: '限流中',
+        overloaded: '过载中',
         tempUnschedulable: '临时不可调度',
         rateLimitedUntil: '限流中，重置时间：{time}',
         overloadedUntil: '负载过重，重置时间：{time}',
@@ -1418,6 +1472,14 @@ export default {
           idleTimeout: '空闲超时',
           idleTimeoutPlaceholder: '5',
           idleTimeoutHint: '会话空闲超时后自动释放'
+        },
+        tlsFingerprint: {
+          label: 'TLS 指纹模拟',
+          hint: '模拟 Node.js/Claude Code 客户端的 TLS 指纹'
+        },
+        sessionIdMasking: {
+          label: '会话 ID 伪装',
+          hint: '启用后将在 15 分钟内固定 metadata.user_id 中的 session ID，使上游认为请求来自同一会话'
         }
       },
       signatureConfig: {
@@ -2095,7 +2157,43 @@ export default {
       cacheCreationTokens: '缓存创建 Token',
       cacheReadTokens: '缓存读取 Token',
       failedToLoad: '加载使用记录失败',
-      ipAddress: 'IP'
+      billingType: '计费类型',
+      allBillingTypes: '全部计费类型',
+      billingTypeBalance: '钱包余额',
+      billingTypeSubscription: '订阅套餐',
+      ipAddress: 'IP',
+      cleanup: {
+        button: '清理',
+        title: '清理使用记录',
+        warning: '清理不可恢复，且会影响历史统计回看。',
+        submit: '提交清理',
+        submitting: '提交中...',
+        confirmTitle: '确认清理',
+        confirmMessage: '确定要提交清理任务吗？清理不可恢复。',
+        confirmSubmit: '确认清理',
+        cancel: '取消任务',
+        cancelConfirmTitle: '确认取消',
+        cancelConfirmMessage: '确定要取消该清理任务吗？',
+        cancelConfirm: '确认取消',
+        cancelSuccess: '清理任务已取消',
+        cancelFailed: '取消清理任务失败',
+        recentTasks: '最近清理任务',
+        loadingTasks: '正在加载任务...',
+        noTasks: '暂无清理任务',
+        range: '时间范围',
+        deletedRows: '删除数量',
+        missingRange: '请选择时间范围',
+        submitSuccess: '清理任务已创建',
+        submitFailed: '创建清理任务失败',
+        loadFailed: '加载清理任务失败',
+        status: {
+          pending: '待执行',
+          running: '执行中',
+          succeeded: '已完成',
+          failed: '失败',
+          canceled: '已取消'
+        }
+      }
     },
 
     // Ops Monitoring
@@ -2895,7 +2993,11 @@ export default {
         enableRegistration: '开放注册',
         enableRegistrationHint: '允许新用户注册',
         emailVerification: '邮箱验证',
-        emailVerificationHint: '新用户注册时需要验证邮箱'
+        emailVerificationHint: '新用户注册时需要验证邮箱',
+        promoCode: '优惠码',
+        promoCodeHint: '允许用户在注册时使用优惠码',
+        passwordReset: '忘记密码',
+        passwordResetHint: '允许用户通过邮箱重置密码'
       },
       turnstile: {
         title: 'Cloudflare Turnstile',
@@ -2963,7 +3065,9 @@ export default {
         homeContent: '首页内容',
         homeContentPlaceholder: '在此输入首页内容，支持 Markdown & HTML 代码。如果输入的是一个链接，则会使用该链接作为 iframe 的 src 属性。',
         homeContentHint: '自定义首页内容，支持 Markdown/HTML。如果输入的是链接（以 http:// 或 https:// 开头），则会使用该链接作为 iframe 的 src 属性，这允许你设置任意网页作为首页。设置后首页的状态信息将不再显示。',
-        homeContentIframeWarning: '⚠️ iframe 模式提示：部分网站设置了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果页面显示空白或报错，请确认目标网站允许被嵌入，或考虑使用 HTML 模式自行构建页面内容。'
+        homeContentIframeWarning: '⚠️ iframe 模式提示：部分网站设置了 X-Frame-Options 或 CSP 安全策略，禁止被嵌入到 iframe 中。如果页面显示空白或报错，请确认目标网站允许被嵌入，或考虑使用 HTML 模式自行构建页面内容。',
+        hideCcsImportButton: '隐藏 CCS 导入按钮',
+        hideCcsImportButtonHint: '启用后将在 API Keys 页面隐藏"导入 CCS"按钮'
       },
       smtp: {
         title: 'SMTP 设置',
